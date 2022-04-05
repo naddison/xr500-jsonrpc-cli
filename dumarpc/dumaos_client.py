@@ -34,7 +34,7 @@ def start(config):
     auth_token = response.cookies.get('auth_token')
     cookies = { 'auth_token':  auth_token }
 
-    interval = 1000 # ms
+    interval = 900 # ms
     timeout = 5 # seconds
     current_time = datetime.now()   
     future_time = current_time + timedelta(seconds=timeout)
@@ -46,21 +46,19 @@ def start(config):
     delta = manage_delta()
 
     f = open(f'./logs/{method}.log', 'a+')
+
+    api_path, payload = create_request('get_system_info', [])
+    url = f'{base_url}{api_path}'
+    response = requests.post(url, 
+        cookies = cookies, 
+        headers = headers,
+        auth = auth, 
+        json = payload)
+    content = response.content.decode("utf-8")
+    date_up_epoch = get_uptime_from_system_info_response(content)
+
     while (future_time > current_time):
-        api_path, payload = create_request('get_system_info', [])
-        url = f'{base_url}{api_path}'
-        response = requests.post(url, 
-            cookies = cookies, 
-            headers = headers,
-            auth = auth, 
-            json = payload)
-
-        content = response.content.decode("utf-8")
-        print(content)
-        days_up = get_uptime_from_system_info_response(content)
-        date_up = datetime.today() - timedelta(days=int(days_up))
-        date_up_epoch = date_up.timestamp() * 1000
-
+       
         api_path, payload = create_request(method, params)
         url = f'{base_url}{api_path}' 
         response = requests.post(url, 
@@ -75,7 +73,3 @@ def start(config):
         time.sleep(interval / 1000)
         current_time = datetime.now()   
     f.close()
-
-    # need uptime date ms
-    # get current date is ms
-    # 

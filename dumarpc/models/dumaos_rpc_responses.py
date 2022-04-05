@@ -1,8 +1,10 @@
 import json
+import re
 from array import array
 from dataclasses import dataclass
-import re
+from datetime import datetime, timedelta
 from typing import List
+
 
 @dataclass(frozen=True)
 class Connection:
@@ -66,8 +68,20 @@ def deserialize_filter_connection_response(jsonstr):
     
 def get_uptime_from_system_info_response(jsonstr):
     system_info = json.loads(jsonstr)
-    p = re.compile("up (\\d+) days")
+    p = re.compile("up (\\d+) days,(.+), load")
     m = p.search(system_info['result'][0]['uptime'])
     if m is not None:
-        return m.group(1)
-
+        days_up = m.group(1)
+        time_up = m.group(2)
+        millis_up = int(days_up) * 24 * 60 * 60 * 1000 # first group is days
+        if 'min' in time_up: # sometimes response gives "X min" as uptime
+            minutes = time_up.replace('min').strip()
+            millis_up += int(minutes) * 60 * 1000
+        else: # format usually in HH:MM
+            time_up = time_up.split(':')
+            hours = time_up[0].strip()
+            minutes = time_up[1].strip()
+            millis_up += int(hours) * 60 * 60 * 1000
+            millis_up += int(minutes) * 60 * 1000
+        date_up = datetime.today() - timedelta(milliseconds=int(millis_up))
+        return date_up.timestamp() * 1000

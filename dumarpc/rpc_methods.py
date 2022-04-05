@@ -103,21 +103,9 @@ def create_json_log(response, delta, uptime_epoch):
     for connection in models:
         total_out += connection.sbytes
         total_in += connection.dbytes
-    total_activity = TotalActivity(models[0].timestamp, total_in, total_out)
+    total_activity = TotalActivity(round(uptime_epoch + models[0].timestamp), total_in, total_out)
     calculated_delta = delta(total_activity)
-
-    print(f'uptime since epoch: {uptime_epoch}')
-    print(f'timestamp since uptime epoch: {models[0].timestamp}')
-    print(f'metric timestamp: {uptime_epoch + models[0].timestamp}')
-
     if (calculated_delta is not None):
         return json.dumps(calculated_delta, cls=EnhancedJSONEncoder)
     else:
-        return None
-  
-def extract_uptime(systeminfo):
-    p = re.compile("up (\\d+) days")
-    m = p.search(str)
-    print(m.group(1))
-
-    
+        return None    
